@@ -43,16 +43,16 @@ from .meshio import LongIndexesNotSupportedError
 
 
 bl_info = {
-    "name": "O3D Exporter",
-    "description": "Export selected object(s) to an OMSI Mesh file",
+    "name": "O3D Importer/Exporter",
+    "description": "Import and Export selected object(s) to and from an OMSI Mesh file",
     "author": "Nathan Burnham (Road-hog123)",
-    "version": (4, 0, 0),
-    "blender": (4, 0, 0),
-    "location": "File > Export > OMSI Mesh (.o3d)",
+    "version": (4, 2, 0),
+    "blender": (4, 2, 0),
+    "location": "File > Import/Export > OMSI Mesh (.o3d)",
     "warning": "",
-    "doc_url": "https://github.com/Road-hog123/blender-omsi-exporter",
+    "doc_url": "https://github.com/Shuubaru/Blender-OMSI-Exporter-Blender4.2",
     "tracker_url": (
-        "https://github.com/Road-hog123/blender-omsi-exporter/issues"
+        "https://github.com/Shuubaru/Blender-OMSI-Exporter-Blender4.2/issues"
     ),
     "support": 'COMMUNITY',
     "category": 'Import-Export',
