@@ -19,7 +19,8 @@ Disclaimer:
   
     - White (previous behaviour)
     - Node (Principled BSDF Base Color)
-    - Viewport (Material > Viewport Display > Color) or Fixed (a single custom colour)
+    - Viewport (Material > Viewport Display > Color)
+    - Fixed (a single custom colour)
     
   **Defaults to Viewport.**
 
