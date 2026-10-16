@@ -11,11 +11,21 @@ Disclaimer:
 - Added import support: File > Import > Import OMSI Mesh (.o3d).
 - When importing, you can select multiple files at once. Multiple .o3d files are automatically parented to an Empty named after their source folder.
 - Added a sidebar panel (OMSI tab) with Import/Export buttons.
+
+  <img width="285" height="82" alt="image" src="https://github.com/user-attachments/assets/8f954a2b-26c0-4c43-a659-e85d5bdfb7e4" />
+
 - Added "Diffuse on Textured Materials" export option to choose where the
-  diffuse colour of textured materials comes from: White (previous
-  behaviour), Node (Principled BSDF Base Color), Viewport (Material >
-  Viewport Display > Color) or Fixed (a single custom colour).
-  Defaults to Viewport.
+  diffuse colour of textured materials comes from:
+  
+    - White (previous behaviour)
+    - Node (Principled BSDF Base Color)
+    - Viewport (Material > Viewport Display > Color) or Fixed (a single custom colour)
+    
+  **Defaults to Viewport.**
+
+  <img width="262" height="106" alt="image" src="https://github.com/user-attachments/assets/f8f94617-9b1f-466b-ba17-5d0accb05133" />
+
+
 - Menu entries are now labelled "Import OMSI Mesh (.o3d)" and
   "Export OMSI Mesh (.o3d)" so they can be told apart in Quick Favorites.
 
