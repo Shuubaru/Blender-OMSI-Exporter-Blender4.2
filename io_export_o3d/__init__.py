@@ -45,7 +45,7 @@ from .meshio import LongIndexesNotSupportedError
 bl_info = {
     "name": "O3D Importer/Exporter",
     "description": "Import and Export selected object(s) to and from an OMSI Mesh file",
-    "author": "Nathan Burnham (Road-hog123)",
+    "author": "Nathan Burnham (Road-hog123), Shuubaru, Claude AI",
     "version": (4, 2, 0),
     "blender": (4, 2, 0),
     "location": "File > Import/Export > OMSI Mesh (.o3d)",
