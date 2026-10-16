@@ -1,24 +1,28 @@
-# OMSI Mesh Exporter for Blender
+# OMSI Mesh Importer/Exporter for Blender 4.2 onwards
 
-OMSI Mesh (`*.o3d`) exporter addon for [Blender](https://blender.org/download/)
-and [Blender LTS](https://blender.org/download/lts/).
+Based on [Road-hog123's](https://github.com/Road-hog123/blender-omsi-exporter/releases/) work.
 
-## Features
+Disclaimer:
+  - New features are strictly focused on vehicles' 3D objects. Not tested on static objects like buildings.
+  - Some of these features (like new Importer and Diffuse Color fix) were made using Claude AI assistance.
 
-- Works on versions of Blender actively supported by the Blender Foundation
-- Export direct from Blender—no converter required
-- Cross-platform—works anywhere Blender and Python do
-- No extraneous settings—never export left-handed Y-up again
-- More capable:
-  - No more tessellation errors
-  - Merge material slots within or between meshes
-  - Export meshes with more than 65535 vertices or triangles
-  - Simultaneously have different Cycles, Eevee, and Export materials
+## New features and changes
+
+- Added import support: File > Import > Import OMSI Mesh (.o3d).
+- When importing, you can select multiple files at once. Multiple .o3d files are automatically parented to an Empty named after their source folder.
+- Added a sidebar panel (OMSI tab) with Import/Export buttons.
+- Added "Diffuse on Textured Materials" export option to choose where the
+  diffuse colour of textured materials comes from: White (previous
+  behaviour), Node (Principled BSDF Base Color), Viewport (Material >
+  Viewport Display > Color) or Fixed (a single custom colour).
+  Defaults to Viewport.
+- Menu entries are now labelled "Import OMSI Mesh (.o3d)" and
+  "Export OMSI Mesh (.o3d)" so they can be told apart in Quick Favorites.
 
 ## Download and Installation
 
 1. Download the latest release for your Blender version from the
-[releases page](https://github.com/Road-hog123/blender-omsi-exporter/releases/).
+
 2. Launch Blender and go to `Edit` > `Preferences` > `Add-ons` > `Install`.
 Select the `.zip` file you downloaded, then click `Install Add-on`.
 3. Check the checkbox next to the addon to enable it.
@@ -31,7 +35,7 @@ correctly—the `io_export_o3d` folder must be directly within `addons`.
 ## Reporting Issues and Enhancements
 
 If you encounter a bug, please report the issue to the
-[issue tracker](https://github.com/road-hog123/blender-omsi-exporter/issues).
+[issue tracker](https://github.com/Shuubaru/Blender-OMSI-Exporter-Blender4.2/issues).
 Enhancement suggestions also go to the issue tracker.
 
 If the error message starts with `Traceback`, go to `Window` >

@@ -33,24 +33,26 @@ from bpy.types import (
     Context,
     Event,
     TOPBAR_MT_file_export,
+    TOPBAR_MT_file_import,
 )
 from bpy.utils import register_class, unregister_class
-from bpy.props import BoolProperty, EnumProperty, StringProperty
+from bpy.props import BoolProperty, EnumProperty, StringProperty, FloatVectorProperty
+from .importer import ImportO3D, menu_func_import
 from .exporter import Exporter
 from .meshio import LongIndexesNotSupportedError
 
 
 bl_info = {
-    "name": "O3D Exporter",
-    "description": "Export selected object(s) to an OMSI Mesh file",
-    "author": "Nathan Burnham (Road-hog123)",
-    "version": (),  # development version
-    "blender": (4, 0, 0),
-    "location": "File > Export > OMSI Mesh (.o3d)",
-    "warning": "Development version - may contain major bugs!",
-    "doc_url": "https://github.com/Road-hog123/blender-omsi-exporter",
+    "name": "O3D Importer/Exporter",
+    "description": "Import and Export selected object(s) to and from an OMSI Mesh file",
+    "author": "Nathan Burnham (Road-hog123), Shuubaru, Claude AI",
+    "version": (4, 2, 0),
+    "blender": (4, 2, 0),
+    "location": "File > Import/Export > OMSI Mesh (.o3d)",
+    "warning": "",
+    "doc_url": "https://github.com/Shuubaru/Blender-OMSI-Exporter-Blender4.2",
     "tracker_url": (
-        "https://github.com/Road-hog123/blender-omsi-exporter/issues"
+        "https://github.com/Shuubaru/Blender-OMSI-Exporter-Blender4.2/issues"
     ),
     "support": 'COMMUNITY',
     "category": 'Import-Export',
@@ -127,6 +129,26 @@ class ExportO3D(Operator):
         description="The name of the material output node to be exported",
         default="Export",
     )
+    diffuse_override: FloatVectorProperty(
+        name="Diffuse Colour",
+        description="Diffuse colour used on textured materials",
+        subtype='COLOR',
+        size=3,
+        min=0.0,
+        max=1.0,
+        default=(0.64, 0.64, 0.64),
+    )
+    textured_diffuse: EnumProperty(
+        name="Diffuse on Textured Materials",
+        description="Where the diffuse colour of textured materials comes from",
+        items=[
+           ('WHITE', "White", "Opaque white"),
+           ('NODE', "Node", "Principled BSDF Base Color and Alpha"),
+           ('VIEWPORT', "Viewport", "Material Viewport Display colour"),
+           ('FIXED', "Fixed", "A fixed colour for all textured materials"),
+        ],
+        default='VIEWPORT',
+    )
 
     @classmethod
     def poll(cls, context: Context) -> bool:
@@ -151,7 +173,10 @@ class ExportO3D(Operator):
         path = path.with_suffix(self.filename_ext)
 
         if context.preferences.addons[__package__].preferences.use_object_name:
-            stem: str = context.active_object.name
+            # Object names may contain slash-separated mesh paths.
+            # Use only the final component as the export filename.
+            # Spaces inside names such as "4ta Marcha" are preserved.
+            stem: str = re.split(r"[\\\\/]", context.active_object.name)[-1]
             # object names are unrestricted UTF-8 strings, which are
             # unsafe for use as a filename - invalid characters are
             # removed and leading/trailing spaces/periods are stripped
@@ -204,6 +229,8 @@ class ExportO3D(Operator):
             uv_layer=self.uv_layer,
             material_output_node_target=self.material_output_node_target,
             material_output_node_name=self.material_output_node_name,
+            textured_diffuse=self.textured_diffuse,
+            textured_color=tuple(self.diffuse_override),
         )
         # get exportable objects with deforming modifiers applied
         objects = [o.evaluated_get(context.view_layer.depsgraph)
@@ -280,6 +307,11 @@ class O3D_PT_export_advanced(Panel):
         col.label(text="Material Output Node")
         col.prop(operator, 'material_output_node_name', text="Name")
         col.prop(operator, 'material_output_node_target', text="Render Target")
+        col.separator()
+        col.prop(operator, 'textured_diffuse', text="Textured Diffuse")
+        sub = col.column()
+        sub.active = operator.textured_diffuse == 'FIXED'
+        sub.prop(operator, 'diffuse_override', text="Colour")
 
 
 class OMSI_Exporter_Preferences(AddonPreferences):
@@ -297,10 +329,21 @@ class OMSI_Exporter_Preferences(AddonPreferences):
     def draw(self, _: Context) -> None:
         layout = self.layout
         layout.prop(self, 'use_object_name')
+        
+class O3D_PT_sidebar(Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "OMSI"
+    bl_label = "OMSI Mesh"
+
+    def draw(self, context: Context) -> None:
+        col = self.layout.column(align=True)
+        col.operator(ImportO3D.bl_idname, text="Import .o3d", icon='IMPORT')
+        col.operator(ExportO3D.bl_idname, text="Export .o3d", icon='EXPORT')
 
 
 def menu_func_export(self, _: Context) -> None:
-    self.layout.operator(ExportO3D.bl_idname, text="OMSI Mesh (.o3d)")
+    self.layout.operator(ExportO3D.bl_idname, text="Export OMSI Mesh (.o3d)")
 
 
 def register() -> None:
@@ -309,6 +352,9 @@ def register() -> None:
     register_class(O3D_PT_export_advanced)
     register_class(OMSI_Exporter_Preferences)
     TOPBAR_MT_file_export.append(menu_func_export)
+    register_class(ImportO3D)
+    TOPBAR_MT_file_import.append(menu_func_import)
+    register_class(O3D_PT_sidebar)
 
 
 def unregister() -> None:
@@ -317,6 +363,9 @@ def unregister() -> None:
     unregister_class(O3D_PT_export_basic)
     unregister_class(O3D_PT_export_advanced)
     unregister_class(OMSI_Exporter_Preferences)
+    TOPBAR_MT_file_import.remove(menu_func_import)
+    unregister_class(ImportO3D)
+    unregister_class(O3D_PT_sidebar)
 
 
 if __name__ == "__main__":

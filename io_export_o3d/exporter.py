@@ -67,6 +67,8 @@ class Exporter:
                  uv_layer: str = 'active_render',
                  material_output_node_target: str = 'ALL',
                  material_output_node_name: str = 'Export',
+                 textured_diffuse: str = 'WHITE',
+                 textured_color: tuple[float, float, float] | None = None,
                  ) -> None:
         """
         Create an `Exporter`
@@ -88,6 +90,11 @@ class Exporter:
         targetting this render engine (default `'ALL'`)
         `material_output_node_name`: use only material output nodes with
         this name (default `"Export"`)
+        `textured_diffuse`: diffuse source for textured materials:
+        `'WHITE'`, `'NODE'`, `'VIEWPORT'` or `'FIXED'` (default
+        `'WHITE'`)
+        `textured_color`: RGB colour used when `textured_diffuse` is
+        `'FIXED'` (default `None`)
         """
         # create format spec based on OMSI 1 compatibility setting
         self._fs = meshio.MeshFormatSpec(1 if compatibility else 7)
@@ -99,6 +106,8 @@ class Exporter:
         self._uv_layer_filter = attrgetter(uv_layer)
         self._mo_target = material_output_node_target
         self._mo_name = material_output_node_name
+        self._textured_diffuse = textured_diffuse
+        self._textured_color = textured_color
 
     @classmethod
     def filter_objects(cls, objects: Iterable[Object]) -> list[Object]:
@@ -161,7 +170,10 @@ class Exporter:
                 # extract mesh from object
                 me = obj.to_mesh()
                 # make sure normal data is up-to-date
-                me.calc_normals_split()
+                try:
+                    me.calc_normals_split()  # removed in 4.1
+                except AttributeError:
+                    pass
                 # meshio only supports triangles, so we need to ensure
                 # we have the triangle data available to work with
                 me.calc_loop_triangles()
@@ -205,7 +217,8 @@ class Exporter:
             # which is used when merging materials
             counter: Counter[Material | None] = Counter()
 
-            for me, matrix, slots, vertex_groups in meshes():
+            for me, co_matrix, slots, vertex_groups in meshes():
+                no_matrix = co_matrix.inverted_safe().transposed()
                 # groupyby requires its input to be sorted
                 # grouping allows for material processing to occur
                 # once per material, not once per triangle
@@ -222,6 +235,8 @@ class Exporter:
                     wrapper = wrappers.setdefault(
                         material, MaterialWrapper(
                             material, self._mo_target, self._mo_name,
+                            self._textured_diffuse,
+                            self._textured_color,
                         )
                     )
                     if me.uv_layers:
@@ -248,8 +263,8 @@ class Exporter:
                                    for vg in vertex_groups}
                         # get new index for this vertex
                         index = vertices[
-                            (matrix @ me.vertices[vi].co).to_tuple(),
-                            (matrix @ me.loops[li].normal).to_tuple(),
+                            (co_matrix @ me.vertices[vi].co).to_tuple(),
+                            (no_matrix @ me.loops[li].normal).normalized().to_tuple(),
                             deform(uv_layer.uv[li].vector).to_tuple(),
                             tuple(weights.items()),
                         ]
@@ -263,7 +278,7 @@ class Exporter:
                     # iterate over triangles and yield with new indices
                     for tri in g:
                         # have to reverse winding for negative scales
-                        loops = (reversed(tri.loops) if matrix.is_negative
+                        loops = (reversed(tri.loops) if co_matrix.is_negative
                                  else tri.loops)
                         yield (
                             # get vertex indices

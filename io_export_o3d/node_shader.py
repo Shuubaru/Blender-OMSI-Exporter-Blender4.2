@@ -213,6 +213,8 @@ class MaterialWrapper():
                  material: Material | None,
                  target: str = 'ALL',
                  name: str = 'Export',
+                 textured_diffuse: str = 'WHITE',
+                 textured_color: tuple[float, float, float] | None = None,
                  ) -> None:
         """
         Wrap a Material.
@@ -221,7 +223,16 @@ class MaterialWrapper():
         `material`: The Blender Material to wrap, or None
         `target`: Material Output Node must target this render engine
         `name`: Material Output Node must have this name
+        `textured_diffuse`: diffuse source for textured materials:
+        `'WHITE'` (opaque white), `'NODE'` (Principled BSDF Base Color
+        and Alpha), `'VIEWPORT'` (material Viewport Display colour) or
+        `'FIXED'` (`textured_color` with the BSDF Alpha)
+        (default `'WHITE'`)
+        `textured_color`: fixed RGB diffuse colour used when
+        `textured_diffuse` is `'FIXED'` (default `None`)
         """
+        self._textured_diffuse: str = textured_diffuse
+        self._textured_color = textured_color
         self._material: Material | None = material
         self._bsdf: ShaderNodeBsdfPrincipled | None = None
         self._color_base: ShaderNodeRGB | None = None
@@ -301,8 +312,13 @@ class MaterialWrapper():
         Fallbacks are implemented such that a colour is always returned,
         even if the material doesn't use nodes or is None.
         """
-        if not self._material or self._image:
+        if not self._material:
             return meshio.ColorRGBA(1.0, 1.0, 1.0, 1.0)
+        mode = self._textured_diffuse if self._image else None
+        if mode == 'WHITE':
+            return meshio.ColorRGBA(1.0, 1.0, 1.0, 1.0)
+        if mode == 'VIEWPORT':
+            return meshio.ColorRGBA._make(self._material.diffuse_color)
         if not self._bsdf:
             return meshio.ColorRGBA._make(self._material.diffuse_color)
 
@@ -317,6 +333,11 @@ class MaterialWrapper():
             socket_float = self._value_alpha.outputs['Value']
         else:
             socket_float = self._bsdf.inputs['Alpha']
+
+        if mode == 'FIXED' and self._textured_color is not None:
+            # textured material with a fixed diffuse colour requested
+            return meshio.ColorRGBA(*self._textured_color,
+                                    socket_float.default_value)
 
         return meshio.ColorRGBA._make(socket_color.default_value[:3]
                                       + (socket_float.default_value,))
